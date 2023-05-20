@@ -35,17 +35,16 @@ public class UserService {
         if(!Objects.equals(userData.getUsername(), user.getUsername()) || !Objects.equals(userData.getPassword(), user.getPassword())) {
             throw new WrongDataException("Неверные данные");
         }
-        System.out.println(1);
-        return new JwtResponse(jwtProvider.generateAccessToken(user));
+        return new JwtResponse(jwtProvider.generateAccessToken(userData));
     }
 
-    public User getOne(Long id) {
-        UserEntity user = userRepository.findById(id).get();
+    public User getOne(Long userId) {
+        UserEntity user = userRepository.findById(userId).get();
         return User.toModel(user);
     }
 
-    public Long delete(Long id) throws UserNotFoundException {
-        userRepository.deleteById(id);
-        return id;
+    public Long delete(Long userId) throws UserNotFoundException {
+        userRepository.deleteById(userId);
+        return userId;
     }
 }

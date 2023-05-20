@@ -1,6 +1,7 @@
 package com.example.javarest.conroller;
 
 import com.example.javarest.entity.UserEntity;
+import com.example.javarest.exceprion.TokenException;
 import com.example.javarest.exceprion.UserAlreadyExistException;
 import com.example.javarest.exceprion.UserNotFoundException;
 import com.example.javarest.exceprion.WrongDataException;
@@ -15,8 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.util.Objects;
-
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @RestController
@@ -28,18 +27,6 @@ public class UserController {
     private UserService userService;
 
     private final JwtProvider jwtProvider;
-
-    private String getTokenFromRequest(HttpServletRequest request) {
-        final String token = request.getHeader(AUTHORIZATION);
-        if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {
-            String jwtToken = token.substring(7);
-            jwtProvider.validateAccessToken(jwtToken);
-            Claims claims = jwtProvider.getAccessClaims(jwtToken);
-            System.out.println(claims);
-            return String.valueOf(claims.get("username"));
-        }
-        return null;
-    }
 
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody UserEntity user) {
@@ -53,12 +40,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity login(HttpServletRequest request, @RequestBody UserEntity user) {
+    public ResponseEntity login(@RequestBody UserEntity user) {
         try {
-            String username = getTokenFromRequest(request);
-            if(!(username.equals(user.getUsername()))) {
-                return ResponseEntity.badRequest().body("Не валидный токен");
-            }
             return ResponseEntity.ok(userService.login(user));
         } catch (WrongDataException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -67,19 +50,25 @@ public class UserController {
         }
     }
 
-    @GetMapping
-    public ResponseEntity getOneUser(@RequestParam Long id) {
+    @GetMapping()
+    public ResponseEntity getOneUser(HttpServletRequest request) {
         try {
-            return ResponseEntity.ok(userService.getOne(id));
+            Long userId = jwtProvider.getTokenFromRequest(request);
+            return ResponseEntity.ok(userService.getOne(userId));
+        } catch (TokenException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Произошла ошибка");
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity deleteUser(@PathVariable Long id) {
+    @DeleteMapping()
+    public ResponseEntity deleteUser(HttpServletRequest request) {
         try {
-            return ResponseEntity.ok(userService.delete(id));
+            Long userId = jwtProvider.getTokenFromRequest(request);
+            return ResponseEntity.ok(userService.delete(userId));
+        } catch (TokenException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
         } catch (UserNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
