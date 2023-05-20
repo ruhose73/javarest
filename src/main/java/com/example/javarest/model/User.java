@@ -3,7 +3,6 @@ package com.example.javarest.model;
 import com.example.javarest.entity.UserEntity;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class User {
@@ -44,4 +43,5 @@ public class User {
     public void setUsername(String username) {
         this.username = username;
     }
+
 }
